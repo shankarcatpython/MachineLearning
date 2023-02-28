@@ -13,3 +13,24 @@ decisions based on new input data.
 Machine learning has applications in a wide range of fields, including computer vision, 
 natural language processing, speech recognition, fraud detection, recommender systems, 
 and more...
+
+LinearRegression:
+
+Linear regression is a supervised learning algorithm used for 
+predicting a target variable (also known as the dependent variable) based on 
+one or more predictor variables (also known as independent variables or features). 
+
+The basic idea behind linear regression is to fit a linear equation to observed 
+data points by minimizing the difference between the observed values 
+and the values predicted by the equation. 
+
+The goal is to find the line of best fit, 
+which can be used to make predictions for new data points. 
+
+The equation of the line is represented as Y = b0 + b1 * X1 + b2 * X2 + ... + bn * Xn, 
+where Y is the dependent variable, X1, X2, ... Xn are the predictor variables, 
+b0 is the intercept or , and b1, b2, ... bn are the coefficients of the equation. 
+
+Linear regression can be used for simple linear regression 
+(when there is only one predictor variable) 
+or multiple linear regression (when there are two or more predictor variables).
