@@ -29,3 +29,4 @@ r2 = r2_score(y_test, y_pred)
 
 print("Mean squared error: ", mse)
 print("R-squared: ", r2)
+print(regressor.coef_)
