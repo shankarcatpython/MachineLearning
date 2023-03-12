@@ -1,31 +1,31 @@
 import pandas as pd
 import numpy as np
+import random
 
 # Load data
 data = pd.read_csv('data.csv')
 
-X = data['predictor_variable'].values.reshape(-1,1)
-Y = data['target_variable'].values.reshape(-1,1)
+X = data['predictor_variable'].tolist()
+Y = data['target_variable'].tolist()
 
-coefficient = np.zeros((2,1))
+coefficient = []
+coefficient.append(0.1)
+coefficient.append(0.1)
 
-coefficient[0] = 1
-coefficient[1] = 2
-increment = 0.001
+increment = 0.01
 
-print(coefficient)
+for value in range(0,10):
+    random_value = random.randint(0, len(X))
+    temp=X[random_value]
+    predicted_value= round((temp * coefficient[0] + coefficient[1]),2)
+    deviation = round((predicted_value - temp),2)
+    adjusted = round((deviation * increment),2)
 
-for value in range(0,(len(X)//10)):
-    deviation = abs(Y[value] - (X[value] * coefficient[0] + coefficient[1]))
-    adjusted = deviation * increment 
-    coefficient[0] +=  adjusted
-    coefficient[1] +=  adjusted
-    print(Y[value],(X[value] * coefficient[0] + coefficient[1]),adjusted)
+    if  adjusted >= 0:
+        coefficient [0] -= 0.01
+        coefficient [1] -= 0.01
+    else:
+        coefficient [0] += 0.01
+        coefficient [1] += 0.01
 
-print(coefficient)
-
-'''
-for value in range(0,len(X)):
-    print(Y[value] , ((X[value] * coefficient[0] )+ coefficient[1]))
-    break
-'''
+    print(random_value,temp,predicted_value,deviation,adjusted)
