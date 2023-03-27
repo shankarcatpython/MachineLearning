@@ -4,6 +4,7 @@ import numpy as np
 import matplotlib
 from sklearn.linear_model import LinearRegression
 from sklearn.metrics import mean_squared_error, r2_score
+import math
 
 # Load data
 data = pd.read_csv('data.csv')
@@ -30,3 +31,8 @@ r2 = r2_score(y_test, y_pred)
 print("Mean squared error: ", mse)
 print("R-squared: ", r2)
 print(regressor.coef_)
+
+'''
+for i in range(0,len(y_test)):
+    print(math.sqrt(y_test[i]),y_test[i],y_pred[i])
+'''
