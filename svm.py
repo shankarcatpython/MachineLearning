@@ -19,13 +19,18 @@ class SVM:
         for _ in range(self.num_iterations):
             for idx, x_i in enumerate(X):
                 calcualted_value = y_[idx] * (np.dot(x_i, self.weights) - self.bias)
-                print(f"Weights : {self.weights} , Class : {y_[idx]} , Value :{x_i} , Out: {calcualted_value}")
+                print(f"Weights : {self.weights}")
                 condition = y_[idx] * (np.dot(x_i, self.weights) - self.bias) >= 1
                 if condition:
+                    print(f" Vaild Classification")
+                    print(f"Value :{x_i} , Class : {y_[idx]} Out: {calcualted_value}")
                     self.weights -= self.lr * (2 * self.lambda_param * self.weights)
                 else:
+                    print(f"InValid  Classification")
+                    print(f"Value :{x_i} , Class : {y_[idx]} Out: {calcualted_value}")
                     self.weights -= self.lr * (2 * self.lambda_param * self.weights - np.dot(x_i, y_[idx]))
                     self.bias -= self.lr * y_[idx]
+                print(f"Updated Weights : {self.weights} \n") 
 
     def predict(self, X):
         approximated = np.dot(X, self.weights) - self.bias
