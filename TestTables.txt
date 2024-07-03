@@ -1,0 +1,591 @@
+-----------------------------------------------------------------------------------------------------------
+
+Steps to Use Hibernate
+Configure Hibernate in the application properties and configuration classes.
+Create JPA entities for the tables.
+Use EntityManager or Spring Data JPA repositories to interact with the database.
+
+-----------------------------------------------------------------------------------------------------------
+
+Updated Project Structure
+css
+
+src
+├── main
+│   ├── java
+│   │   └── com
+│   │       └── example
+│   │           ├── SourceToFileApplication.java
+│   │           ├── FileToTargetApplication.java
+│   │           ├── config
+│   │           │   ├── SourceDatabaseConfig.java
+│   │           │   ├── TargetDatabaseConfig.java
+│   │           ├── entity
+│   │           │   ├── Table1.java
+│   │           │   ├── Table2.java
+│   │           │   ├── Table3.java
+│   │           ├── repository
+│   │           │   ├── Table1Repository.java
+│   │           │   │   ├── Table2Repository.java
+│   │           │   │   ├── Table3Repository.java
+│   │           ├── service
+│   │           │   ├── DataExtractionService.java
+│   │           │   ├── KeyMappingService.java
+│   │           │   ├── DataLoadingService.java
+│   └── resources
+│       └── application.properties
+
+-----------------------------------------------------------------------------------------------------------
+Configuration Files
+application.properties
+Update the properties file to include Hibernate-specific configurations.
+
+properties
+
+# Source Database
+source.datasource.url=jdbc:mysql://source_host:3306/source_db
+source.datasource.username=root
+source.datasource.password=root
+source.datasource.driverClassName=com.mysql.cj.jdbc.Driver
+
+source.jpa.hibernate.dialect=org.hibernate.dialect.MySQL5Dialect
+source.jpa.show-sql=true
+source.jpa.hibernate.ddl-auto=none
+
+# Target Database
+target.datasource.url=jdbc:mysql://target_host:3306/target_db
+target.datasource.username=root
+target.datasource.password=root
+target.datasource.driverClassName=com.mysql.cj.jdbc.Driver
+
+target.jpa.hibernate.dialect=org.hibernate.dialect.MySQL5Dialect
+target.jpa.show-sql=true
+target.jpa.hibernate.ddl-auto=none
+
+-----------------------------------------------------------------------------------------------------------
+SourceDatabaseConfig.java
+java
+
+package com.example.config;
+
+import org.springframework.beans.factory.annotation.Qualifier;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.boot.orm.jpa.EntityManagerFactoryBuilder;
+import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Configuration;
+import org.springframework.data.jpa.repository.config.EnableJpaRepositories;
+import org.springframework.jdbc.datasource.DriverManagerDataSource;
+import org.springframework.orm.jpa.JpaTransactionManager;
+import org.springframework.orm.jpa.LocalContainerEntityManagerFactoryBean;
+import org.springframework.transaction.PlatformTransactionManager;
+
+import javax.sql.DataSource;
+import java.util.HashMap;
+import java.util.Map;
+
+@Configuration
+@EnableJpaRepositories(
+    basePackages = "com.example.repository",
+    entityManagerFactoryRef = "sourceEntityManagerFactory",
+    transactionManagerRef = "sourceTransactionManager"
+)
+public class SourceDatabaseConfig {
+
+    @Value("${source.datasource.url}")
+    private String url;
+
+    @Value("${source.datasource.username}")
+    private String username;
+
+    @Value("${source.datasource.password}")
+    private String password;
+
+    @Value("${source.datasource.driverClassName}")
+    private String driverClassName;
+
+    @Value("${source.jpa.hibernate.dialect}")
+    private String hibernateDialect;
+
+    @Value("${source.jpa.show-sql}")
+    private boolean showSql;
+
+    @Value("${source.jpa.hibernate.ddl-auto}")
+    private String ddlAuto;
+
+    @Bean(name = "sourceDataSource")
+    public DataSource sourceDataSource() {
+        DriverManagerDataSource dataSource = new DriverManagerDataSource();
+        dataSource.setDriverClassName(driverClassName);
+        dataSource.setUrl(url);
+        dataSource.setUsername(username);
+        dataSource.setPassword(password);
+        return dataSource;
+    }
+
+    @Bean(name = "sourceEntityManagerFactory")
+    public LocalContainerEntityManagerFactoryBean sourceEntityManagerFactory(EntityManagerFactoryBuilder builder) {
+        Map<String, Object> properties = new HashMap<>();
+        properties.put("hibernate.dialect", hibernateDialect);
+        properties.put("hibernate.show_sql", showSql);
+        properties.put("hibernate.hbm2ddl.auto", ddlAuto);
+
+        return builder
+                .dataSource(sourceDataSource())
+                .packages("com.example.entity")
+                .persistenceUnit("source")
+                .properties(properties)
+                .build();
+    }
+
+    @Bean(name = "sourceTransactionManager")
+    public PlatformTransactionManager sourceTransactionManager(
+            @Qualifier("sourceEntityManagerFactory") LocalContainerEntityManagerFactoryBean sourceEntityManagerFactory) {
+        return new JpaTransactionManager(sourceEntityManagerFactory.getObject());
+    }
+}
+
+-----------------------------------------------------------------------------------------------------------
+
+TargetDatabaseConfig.java
+java
+
+package com.example.config;
+
+import org.springframework.beans.factory.annotation.Qualifier;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.boot.orm.jpa.EntityManagerFactoryBuilder;
+import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Configuration;
+import org.springframework.data.jpa.repository.config.EnableJpaRepositories;
+import org.springframework.jdbc.datasource.DriverManagerDataSource;
+import org.springframework.orm.jpa.JpaTransactionManager;
+import org.springframework.orm.jpa.LocalContainerEntityManagerFactoryBean;
+import org.springframework.transaction.PlatformTransactionManager;
+
+import javax.sql.DataSource;
+import java.util.HashMap;
+import java.util.Map;
+
+@Configuration
+@EnableJpaRepositories(
+    basePackages = "com.example.repository",
+    entityManagerFactoryRef = "targetEntityManagerFactory",
+    transactionManagerRef = "targetTransactionManager"
+)
+public class TargetDatabaseConfig {
+
+    @Value("${target.datasource.url}")
+    private String url;
+
+    @Value("${target.datasource.username}")
+    private String username;
+
+    @Value("${target.datasource.password}")
+    private String password;
+
+    @Value("${target.datasource.driverClassName}")
+    private String driverClassName;
+
+    @Value("${target.jpa.hibernate.dialect}")
+    private String hibernateDialect;
+
+    @Value("${target.jpa.show-sql}")
+    private boolean showSql;
+
+    @Value("${target.jpa.hibernate.ddl-auto}")
+    private String ddlAuto;
+
+    @Bean(name = "targetDataSource")
+    public DataSource targetDataSource() {
+        DriverManagerDataSource dataSource = new DriverManagerDataSource();
+        dataSource.setDriverClassName(driverClassName);
+        dataSource.setUrl(url);
+        dataSource.setUsername(username);
+        dataSource.setPassword(password);
+        return dataSource;
+    }
+
+    @Bean(name = "targetEntityManagerFactory")
+    public LocalContainerEntityManagerFactoryBean targetEntityManagerFactory(EntityManagerFactoryBuilder builder) {
+        Map<String, Object> properties = new HashMap<>();
+        properties.put("hibernate.dialect", hibernateDialect);
+        properties.put("hibernate.show_sql", showSql);
+        properties.put("hibernate.hbm2ddl.auto", ddlAuto);
+
+        return builder
+                .dataSource(targetDataSource())
+                .packages("com.example.entity")
+                .persistenceUnit("target")
+                .properties(properties)
+                .build();
+    }
+
+    @Bean(name = "targetTransactionManager")
+    public PlatformTransactionManager targetTransactionManager(
+            @Qualifier("targetEntityManagerFactory") LocalContainerEntityManagerFactoryBean targetEntityManagerFactory) {
+        return new JpaTransactionManager(targetEntityManagerFactory.getObject());
+    }
+}
+-----------------------------------------------------------------------------------------------------------
+
+Entity Classes
+You need to create entity classes for each of your tables.
+
+Table1.java
+java
+
+package com.example.entity;
+
+import javax.persistence.Entity;
+import javax.persistence.Id;
+import javax.persistence.Table;
+
+@Entity
+@Table(name = "Table1")
+public class Table1 {
+
+    @Id
+    private Integer tbl1Key;
+    private String otherColumn;
+
+    // Getters and setters
+}
+-----------------------------------------------------------------------------------------------------------
+
+Table2.java
+java
+
+package com.example.entity;
+
+import javax.persistence.Entity;
+import javax.persistence.Id;
+import javax.persistence.ManyToOne;
+import javax.persistence.Table;
+
+@Entity
+@Table(name = "Table2")
+public class Table2 {
+
+    @Id
+    private Integer tbl2Key;
+
+    @ManyToOne
+    private Table1 fkeytbl1;
+
+    private String otherColumn;
+
+    // Getters and setters
+}
+-----------------------------------------------------------------------------------------------------------
+
+Table3.java
+java
+
+package com.example.entity;
+
+import javax.persistence.Entity;
+import javax.persistence.Id;
+import javax.persistence.ManyToOne;
+import javax.persistence.Table;
+
+@Entity
+@Table(name = "Table3")
+public class Table3 {
+
+    @Id
+    private Integer tbl3Key;
+
+    @ManyToOne
+    private Table2 fkeytbl2;
+
+    private String otherColumn;
+
+    // Getters and setters
+}
+-----------------------------------------------------------------------------------------------------------
+
+Repository Interfaces
+You need to create repository interfaces for each of your entities.
+
+Table1Repository.java
+java
+
+package com.example.repository;
+
+import com.example.entity.Table1;
+import org.springframework.data.jpa.repository.JpaRepository;
+
+public interface Table1Repository extends JpaRepository<Table1, Integer> {
+}
+Table2Repository.java
+java
+
+package com.example.repository;
+
+import com.example.entity.Table2;
+import org.springframework.data.jpa.repository.JpaRepository;
+
+public interface Table2Repository extends JpaRepository<Table2, Integer> {
+}
+Table3Repository.java
+java
+
+package com.example.repository;
+
+import com.example.entity.Table3;
+import org.springframework.data.jpa.repository.JpaRepository;
+
+public interface Table3Repository extends JpaRepository<Table3, Integer> {
+}
+-----------------------------------------------------------------------------------------------------------
+
+Service Classes
+DataExtractionService.java
+Modify DataExtractionService to use EntityManager.
+
+java
+
+package com.example.service;
+
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Service;
+
+import javax.persistence.EntityManager;
+import javax.persistence.PersistenceContext;
+import javax.sql.DataSource;
+import java.io.FileWriter;
+import java.io.IOException;
+import java.util.List;
+import java.util.Map;
+
+@Service
+public class DataExtractionService {
+
+    @PersistenceContext
+    private EntityManager entityManager;
+
+    public void extractDataToFile(String filename) throws IOException {
+        FileWriter writer = new FileWriter(filename);
+
+        // List of tables to extract
+        List<String> tables = List.of("Table1", "Table2", "Table3");
+
+        for (String table : tables) {
+            writer.write("Table: " + table + "\n");
+
+            List<?> rows = entityManager.createQuery("SELECT e FROM " + table + " e").getResultList();
+
+            for (Object row : rows) {
+                writer.write(row.toString() + "\n");
+            }
+
+            writer.write("\n");
+        }
+
+        writer.close();
+    }
+}
+-----------------------------------------------------------------------------------------------------------
+
+KeyMappingService.java
+Modify KeyMappingService to use EntityManager.
+
+java
+
+package com.example.service;
+
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Service;
+
+import javax.persistence.EntityManager;
+import javax.persistence.PersistenceContext;
+import java.io.*;
+import java.util.HashMap;
+import java.util.Map;
+
+@Service
+public class KeyMappingService {
+
+    @PersistenceContext
+    private EntityManager entityManager;
+
+    public void updateKeys(String inputFile, String outputFile) throws IOException {
+        BufferedReader reader = new BufferedReader(new FileReader(inputFile));
+        BufferedWriter writer = new BufferedWriter(new FileWriter(outputFile));
+        String line;
+        String currentTable = null;
+        Map<Integer, Integer> primaryKeyMapping = new HashMap<>();
+        Map<Integer, Integer> foreignKeyMapping = new HashMap<>();
+
+        while ((line = reader.readLine()) != null) {
+            if (line.startsWith("Table: ")) {
+                currentTable = line.substring(7).trim();
+                writer.write(line + "\n");
+            } else if (!line.isEmpty()) {
+                String updatedLine = updateLine(line, currentTable, primaryKeyMapping, foreignKeyMapping);
+                writer.write(updatedLine + "\n");
+            } else {
+                writer.write("\n");
+            }
+        }
+
+        reader.close();
+        writer.close();
+    }
+
+    private String updateLine(String line, String table, Map<Integer, Integer> primaryKeyMapping, Map<Integer, Integer> foreignKeyMapping) {
+        line = line.replace("{", "").replace("}", "");
+        String[] keyValuePairs = line.split(", ");
+        Map<String, String> columnValues = new HashMap<>();
+
+        for (String pair : keyValuePairs) {
+            String[] keyValue = pair.split("=");
+            columnValues.put(keyValue[0], keyValue[1]);
+        }
+
+        int oldPrimaryKey = Integer.parseInt(columnValues.get(table + "Key"));
+        int newPrimaryKey = getNextPrimaryKey(table);
+
+        primaryKeyMapping.put(oldPrimaryKey, newPrimaryKey);
+        columnValues.put(table + "Key", String.valueOf(newPrimaryKey));
+
+        for (Map.Entry<String, String> entry : columnValues.entrySet()) {
+            if (entry.getKey().startsWith("Fkey")) {
+                int oldForeignKey = Integer.parseInt(entry.getValue());
+                int newForeignKey = primaryKeyMapping.getOrDefault(oldForeignKey, oldForeignKey);
+                entry.setValue(String.valueOf(newForeignKey));
+            }
+        }
+
+        StringBuilder updatedLine = new StringBuilder("{");
+        for (Map.Entry<String, String> entry : columnValues.entrySet()) {
+            updatedLine.append(entry.getKey()).append("=").append(entry.getValue()).append(", ");
+        }
+        updatedLine.setLength(updatedLine.length() - 2);
+        updatedLine.append("}");
+
+        return updatedLine.toString();
+    }
+
+    private int getNextPrimaryKey(String table) {
+        return (int) entityManager.createQuery("SELECT MAX(e.id) + 1 FROM " + table + " e").getSingleResult();
+    }
+}
+
+-----------------------------------------------------------------------------------------------------------
+
+DataLoadingService.java
+Modify DataLoadingService to use EntityManager.
+
+java
+
+package com.example.service;
+
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Service;
+
+import javax.persistence.EntityManager;
+import javax.persistence.PersistenceContext;
+import java.io.BufferedReader;
+import java.io.FileReader;
+import java.io.IOException;
+import java.util.ArrayList;
+import java.util.List;
+
+@Service
+public class DataLoadingService {
+
+    @PersistenceContext
+    private EntityManager entityManager;
+
+    public void loadDataFromFile(String filename) throws IOException {
+        BufferedReader reader = new BufferedReader(new FileReader(filename));
+        String line;
+        String currentTable = null;
+        List<String> rows = new ArrayList<>();
+
+        while ((line = reader.readLine()) != null) {
+            if (line.startsWith("Table: ")) {
+                if (currentTable != null) {
+                    insertData(currentTable, rows);
+                }
+                currentTable = line.substring(7).trim();
+                rows.clear();
+            } else if (!line.isEmpty()) {
+                rows.add(line);
+            }
+        }
+
+        if (currentTable != null) {
+            insertData(currentTable, rows);
+        }
+
+        reader.close();
+    }
+
+    private void insertData(String table, List<String> rows) {
+        for (String row : rows) {
+            String processedRow = processRow(row);
+            entityManager.createQuery("INSERT INTO " + table + " VALUES (" + processedRow + ")").executeUpdate();
+        }
+    }
+
+    private String processRow(String row) {
+        row = row.replace("{", "").replace("}", "");
+        String[] keyValuePairs = row.split(", ");
+        StringBuilder values = new StringBuilder();
+
+        for (String pair : keyValuePairs) {
+            String value = pair.split("=")[1];
+            values.append("'").append(value).append("', ");
+        }
+
+        values.setLength(values.length() - 2);  // Remove the trailing comma and space
+        return values.toString();
+    }
+}
+-----------------------------------------------------------------------------------------------------------
+
+Summary
+With these changes, the project now uses Hibernate for database interactions. The DataExtractionService, KeyMappingService, and DataLoadingService have been updated to use EntityManager for querying and updating the database. Entity classes and repository interfaces have been added to represent the database tables and provide a more structured way to interact with the database. Configuration files have been updated to include Hibernate-specific properties.
+
+Summary of Java Files
+SourceToFileApplication.java: Entry point for extracting data from the source database and writing it to a file using DataExtractionService.
+
+FileToTargetApplication.java: Entry point for updating primary and foreign keys in the extracted data file and loading the data into the target database using KeyMappingService and DataLoadingService.
+
+SourceDatabaseConfig.java: Configures the data source, entity manager factory, and transaction manager for the source database using Hibernate.
+
+TargetDatabaseConfig.java: Configures the data source, entity manager factory, and transaction manager for the target database using Hibernate.
+
+Table1.java, Table2.java, Table3.java: Entity classes representing the structure of the corresponding tables in the database.
+
+Table1Repository.java, Table2Repository.java, Table3Repository.java: Repository interfaces for performing CRUD operations on the corresponding entities using Spring Data JPA.
+
+DataExtractionService.java: Extracts data from the source database using EntityManager and writes it to a file.
+
+KeyMappingService.java: Updates primary and foreign keys in the extracted data file based on the next available keys in the target database.
+
+DataLoadingService.java: Loads the updated data from the file into the target database using EntityManager.
+
+-----------------------------------------------------------------------------------------------------------
+
+Spring Boot: Provides the framework to create standalone Spring applications with minimal configuration. It sets up the application context, manages dependencies, and provides a convenient way to run the application.
+
+Hibernate: Integrated as the JPA (Java Persistence API) provider. It manages the mapping of Java objects to database tables and handles CRUD operations, queries, and transaction management.
+
+
+-----------------------------------------------------------------------------------------------------------
+
+Key Points
+Entity Classes: Java classes (Table1.java, Table2.java, Table3.java) mapped to database tables using JPA annotations.
+Repositories: Interfaces (Table1Repository.java, Table2Repository.java, Table3Repository.java) extending JpaRepository to provide CRUD operations and custom queries.
+Configuration Classes:
+SourceDatabaseConfig.java and TargetDatabaseConfig.java configure the data sources, entity manager factories, and transaction managers for the source and target databases, respectively.
+Service Classes:
+DataExtractionService.java uses EntityManager to extract data from the source database.
+KeyMappingService.java updates primary and foreign keys in the extracted data file.
+DataLoadingService.java uses EntityManager to load the updated data into the target database.
+Spring Boot and Hibernate Integration
+Spring Boot: Simplifies the setup and configuration of the application, manages dependencies, and provides the CommandLineRunner interface for running the application logic.
+Hibernate: Handles ORM (Object-Relational Mapping) through the JPA specification, making it easier to interact with the database using entity classes and repositories.
