@@ -142,6 +142,10 @@ for index, row in anomalies.iterrows():
     # Append detailed reason with time and host
     anomalies.loc[index, 'Anomaly_Reason'] = f"Time: {row['Time_Aggregated']}, Host: {row['Host']}, Reason: {', '.join(reason)}"
 
+# Save anomalies to CSV file
+anomalies.to_csv('anomalies.csv', index=False)
+print("Anomalies saved to 'anomalies.csv'.")
+
 # Display the data and anomalies
 print("Sample of Merged Aggregated Data:")
 print(merged_aggregated.head())
