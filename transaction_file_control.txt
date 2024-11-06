@@ -1,0 +1,28 @@
+Control File for Transaction Processing
+========================================
+
+Initial Total Amount (in cents): 5341286143
+Initial Total Amount (in dollars): $53412861.43
+
+Skipped Transactions:
+----------------------
+Transaction ID: HGBAHPXL7IORO4W, Amount: 76263981 cents ($762639.81)
+Transaction ID: W8UCAUIPC2DY4CJ, Amount: 52707294 cents ($527072.94)
+Transaction ID: ROP0H5Y5WM69AOU, Amount: 72330490 cents ($723304.90)
+Transaction ID: KMTVFIHQMFACBZH, Amount: 69246799 cents ($692467.99)
+Transaction ID: U9055LVKDFK43O2, Amount: 13933051 cents ($139330.51)
+Transaction ID: BSSH9RRN4N1GX2I, Amount: 6222972 cents ($62229.72)
+Transaction ID: G8AACMIMSYZKVNA, Amount: 28695403 cents ($286954.03)
+Transaction ID: L6WRJLEFJ8NPIOU, Amount: 68911945 cents ($689119.45)
+Transaction ID: CL4P43I1U8CWYKC, Amount: 61006917 cents ($610069.17)
+Transaction ID: YR7IXUOW4MEP2TP, Amount: 2308229 cents ($23082.29)
+
+Skipped Total Amount (in cents): {skipped_total_amount}
+Skipped Total Amount (in dollars): $4516270.81
+
+Final Calculations:
+--------------------
+Final Total Amount (in cents): 4889659062
+Final Total Amount (in dollars): $48896590.62
+Calculation: Final Total = Initial Total - Skipped Total
+              5341286143 - 451627081 = 4889659062
